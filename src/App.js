@@ -4,17 +4,31 @@ import ContactForm from "./ContactForm/ContactForm";
 import { ContactList } from "./ContactList/ContactList";
 import { Filter } from "./Filter/Filter";
 import { PhonebookMainTitleStyled, PhonebookTitleStyled } from "./App.styled";
+import { saveContact, loadContact } from "Utils/localStorage";
+
+const LS_KEY = "saved-phonebook-contacts";
 
 export default class App extends Component {
   state = {
     contacts: [
-      { id: "id-1", name: "Rosie Simpson", number: "459-12-56" },
-      { id: "id-2", name: "Hermione Kline", number: "443-89-12" },
-      { id: "id-3", name: "Eden Clements", number: "645-17-79" },
-      { id: "id-4", name: "Annie Copeland", number: "227-91-26" },
     ],
     filter: "",
   };
+
+  componentDidMount() {
+    const localSavedContacts = loadContact(LS_KEY);
+    if (localSavedContacts?.length > 0) {
+      this.setState({ contacts: localSavedContacts });
+    }
+  }
+
+  componentDidUpdate(_, prevState) {
+    const prevContacts = prevState.contacts;
+    const newContacts = this.state.contacts;
+    if (newContacts !== prevContacts) {
+      saveContact(LS_KEY, newContacts?.length > 0 ? newContacts : []);
+    }
+  }
 
   onChangeFilter = (e) => {
     this.setState({ filter: e.currentTarget.value });
@@ -35,6 +49,7 @@ export default class App extends Component {
       return true;
     }
   };
+
   onAddContactSubmit = ({ name, number }) => {
     if (!this.isSaved(name)) return;
     const contact = { id: nanoid(), name, number };
@@ -57,11 +72,10 @@ export default class App extends Component {
           <PhonebookMainTitleStyled>Phonebook</PhonebookMainTitleStyled>
           <ContactForm onSubmit={this.onAddContactSubmit} />
         </div>
-  
+
         <PhonebookTitleStyled>Contacts</PhonebookTitleStyled>
         <Filter onChange={this.onChangeFilter} />
         <ContactList contacts={contacts} onDeleteContact={this.deleteContact} />
-      
       </div>
     );
   }
